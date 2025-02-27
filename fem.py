@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+import sys
 
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.tri as tri
 from scipy.spatial import Delaunay
 from scipy.linalg import solve
+import yaml
 
 class FiniteElementModel:
 
@@ -96,34 +98,37 @@ class FiniteElementModel:
     def solve(self, external_forces):
         self.assemble_stiffness_matrix()
         self.apply_boundary_conditions(external_forces)
-        print("striffness_matrix: type:{} shape={}".format(type(self.global_stiffness_matrix), self.global_stiffness_matrix.shape))
-        print(self.global_stiffness_matrix)
-        print("")
-        print("force_vector: type={} shape={}".format(type(self.force_vector), self.force_vector.shape))
-        print(self.force_vector)
         self.displacements = solve(self.global_stiffness_matrix, self.force_vector)
 
-    def visualize(self, stress=False):
+    def visualize(self, stress=False, material_name=""):
         plt.figure(figsize=(5, 5))
         triangulation = tri.Triangulation(self.nodes[:, 0], self.nodes[:, 1], self.elements)
-        plt.triplot(triangulation, color='blue')
-        plt.scatter(self.nodes[:, 0], self.nodes[:, 1], color='red')
-        plt.title('Finite Element Mesh')
-        plt.savefig('fem_mesh.png')
+        plt.triplot(triangulation, color="blue")
+        plt.scatter(self.nodes[:, 0], self.nodes[:, 1], color="red")
+        plt.title(f"Finite Element Mesh - {material_name}")
+        plt.savefig(f"img/fem_mesh - {material_name}.png")
 
-    def visualize_deformation(self):
+    def visualize_deformation(self, material_name=""):
         # Plot deformed shape if displacements are available
         if self.displacements is not None:
             scale = 1
             deformed_nodes = self.nodes + scale * self.displacements.reshape((-1, 2))
             deformed_triangulation = tri.Triangulation(deformed_nodes[:, 0], deformed_nodes[:, 1], self.elements)
-            plt.triplot(deformed_triangulation, color='red')
-            plt.title('Finite Element Mesh with Deformation')
-            plt.savefig('fem_dispacement.png')
+            plt.triplot(deformed_triangulation, color="red")
+            plt.title(f"Finite Element Mesh of {material_name} with Deformation")
+            plt.savefig(f"img/fem_dispacement_{material_name}.png")
 
 
 if __name__ == "__main__":
 
+    # Read the config
+    config = None
+    selected_material = None
+    with open("materials.yml") as f:
+        config = yaml.safe_load(f)
+    selected_material = config["materials"]["Aluminum"]
+
+    # The node
     nodes = [
         (0, 0), (1, 0), (2, 0), (3, 0),
         (0, 1), (1, 1), (2, 1), (3, 1),
@@ -138,8 +143,10 @@ if __name__ == "__main__":
 
     # Material properties
     material_properties = {
-        'E': 0.00025e9,     # Young's modulus in Pascals
-        'nu': 0.3           # Poisson's ratio
+        # Young's modulus in Pascals
+        'E': float(selected_material["modulus"]),
+        # Poisson's ratio
+        'nu': float(selected_material["poisson_ratio"])
     }
 
     # Boundary conditions (Fixed on the left edge)
@@ -155,5 +162,5 @@ if __name__ == "__main__":
     # Create and run the FEM model
     fem_model = FiniteElementModel(nodes, elements, material_properties, boundary_conditions)
     fem_model.solve(external_forces)
-    fem_model.visualize()
-    fem_model.visualize_deformation()
+    fem_model.visualize(stress=False, material_name=selected_material["name"])
+    fem_model.visualize_deformation(material_name=selected_material["name"])

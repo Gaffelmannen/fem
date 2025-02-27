@@ -1,0 +1,49 @@
+materials:
+  Aluminum:
+    name: Aluminum
+    modulus: 69e9  # Pa
+    poisson_ratio: 0.33
+  Brass:
+    name: Brass
+    modulus: 100e9  # Pa
+    poisson_ratio: 0.34
+  Copper:
+    name: Copper
+    modulus: 110e9  # Pa
+    poisson_ratio: 0.34
+  Gold:
+    name: Gold
+    modulus: 79e9  # Pa
+    poisson_ratio: 0.42
+  Iron:
+    name: Iron
+    modulus: 210e9  # Pa
+    poisson_ratio: 0.29
+  Lead:
+    name: Lead
+    modulus: 16e9  # Pa
+    poisson_ratio: 0.44
+  Nickel:
+    name: Nickel
+    modulus: 200e9  # Pa
+    poisson_ratio: 0.31
+  Silver:
+    name: Silver
+    modulus: 83e9  # Pa
+    poisson_ratio: 0.37
+  Steel_Carbon:
+    name: Steel (Carbon)
+    modulus: 200e9  # Pa
+    poisson_ratio: 0.30
+  Titanium:
+    name: Titanium
+    modulus: 116e9  # Pa
+    poisson_ratio: 0.32
+  Tungsten:
+    name: Tungsten
+    modulus: 400e9  # Pa
+    poisson_ratio: 0.28
+  Wood:
+    name: Wood
+    modulus: 10e9  # Pa
+    poisson_ratio: 0.30
