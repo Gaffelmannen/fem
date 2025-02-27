@@ -121,25 +121,13 @@ class FiniteElementModel:
 
 if __name__ == "__main__":
 
-    # Read the config
+    # Read the material config file
     config = None
-    selected_material = None
-    with open("materials.yml") as f:
+
+    # Material
+    with open("materials.yml", "r") as f:
         config = yaml.safe_load(f)
     selected_material = config["materials"]["Aluminum"]
-
-    # The node
-    nodes = [
-        (0, 0), (1, 0), (2, 0), (3, 0),
-        (0, 1), (1, 1), (2, 1), (3, 1),
-        (0, 2), (1, 2), (2, 2), (3, 2)
-    ]
-
-    # Define triangular elements by referencing nodes
-    elements = [
-        (0, 1, 4), (1, 5, 4), (1, 2, 5), (2, 6, 5), (2, 3, 6), (3, 7, 6),
-        (4, 5, 8), (5, 9, 8), (5, 6, 9), (6, 10, 9), (6, 7, 10), (7, 11, 10)
-    ]
 
     # Material properties
     material_properties = {
@@ -149,16 +137,32 @@ if __name__ == "__main__":
         'nu': float(selected_material["poisson_ratio"])
     }
 
+    # Load the geometry file
+    with open("geometry.yml", "r") as file:
+        config = yaml.safe_load(file)
+    
+    # Nodes
+    nodes = [tuple(node["coordinates"]) for node in config["geometry"]["nodes"]]
+
+    # Define triangular elements by referencing nodes
+    elements = [tuple(element["nodes"]) for element in config["geometry"]["elements"]]
+
     # Boundary conditions (Fixed on the left edge)
-    boundary_conditions = {
-        0: (0, 0), 4: (0, 0), 8: (3, 0)  # Fixed x and y displacements
-    }
+    boundary_conditions = {}
+    for fixed in config["geometry"]["boundary_conditions"]["fixed_displacements"]:
+        node = fixed["node"]
+        ux = fixed.get("ux", None)
+        uy = fixed.get("uy", None)
+        boundary_conditions[node] = (ux, uy)
 
     # External forces (Horizontal force on the right edge)
-    external_forces = {
-        3: (0, 0), 7: (1000, 1000), 11: (1000, 0)  # Force in x-direction
-    }
-
+    external_forces = {}
+    for force in config["geometry"]["external_forces"]["forces"]:
+        node = force["node"]
+        fx = force.get("fx", 0)
+        fy = force.get("fy", 0)
+        external_forces[node] = (fx, fy)
+    
     # Create and run the FEM model
     fem_model = FiniteElementModel(nodes, elements, material_properties, boundary_conditions)
     fem_model.solve(external_forces)
