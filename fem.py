@@ -100,6 +100,52 @@ class FiniteElementModel:
         self.apply_boundary_conditions(external_forces)
         self.displacements = solve(self.global_stiffness_matrix, self.force_vector)
 
+    def visualize_stress_distribution(self, material_name=""):
+        if self.displacements is None:
+            return
+        
+        element_stresses = []
+        for element in self.elements:
+            node_indices = np.array(element)
+            coords = self.nodes[node_indices]
+            
+            x1, y1 = coords[0]
+            x2, y2 = coords[1]
+            x3, y3 = coords[2]
+            
+            A = 0.5 * np.linalg.det(np.array([
+                [1, x1, y1],
+                [1, x2, y2],
+                [1, x3, y3]
+            ]))
+            
+            b1, b2, b3 = y2 - y3, y3 - y1, y1 - y2
+            c1, c2, c3 = x3 - x2, x1 - x3, x2 - x1
+            
+            B = (1 / (2 * A)) * np.array([
+                [b1, 0, b2, 0, b3, 0],
+                [0, c1, 0, c2, 0, c3],
+                [c1, b1, c2, b2, c3, b3]
+            ])
+            
+            D = (self.material_properties['E'] / (1 - self.material_properties['nu']**2)) * np.array([
+                [1, self.material_properties['nu'], 0],
+                [self.material_properties['nu'], 1, 0],
+                [0, 0, (1 - self.material_properties['nu']) / 2]
+            ])
+            
+            element_displacements = self.displacements[np.repeat(node_indices, 2) * 2 + np.tile([0, 1], 3)]
+            stress = D @ B @ element_displacements
+            von_mises_stress = np.linalg.norm(stress)
+            element_stresses.append(von_mises_stress)
+        
+        plt.figure(figsize=(5, 5))
+        triangulation = tri.Triangulation(self.nodes[:, 0], self.nodes[:, 1], self.elements)
+        plt.tripcolor(triangulation, element_stresses, shading='gouraud', cmap='jet')
+        plt.colorbar(label='Von Mises Stress')
+        plt.title(f"Stress Distribution - {material_name}")
+        plt.savefig(f"img/fem_stress_{material_name}.png")
+
     def visualize(self, stress=False, material_name=""):
         plt.figure(figsize=(5, 5))
         triangulation = tri.Triangulation(self.nodes[:, 0], self.nodes[:, 1], self.elements)
@@ -127,7 +173,7 @@ if __name__ == "__main__":
     # Material
     with open("materials.yml", "r") as f:
         config = yaml.safe_load(f)
-    selected_material = config["materials"]["Aluminum"]
+    selected_material = config["materials"]["Wood"]
 
     # Material properties
     material_properties = {
@@ -165,6 +211,9 @@ if __name__ == "__main__":
     
     # Create and run the FEM model
     fem_model = FiniteElementModel(nodes, elements, material_properties, boundary_conditions)
+    
     fem_model.solve(external_forces)
+
     fem_model.visualize(stress=False, material_name=selected_material["name"])
     fem_model.visualize_deformation(material_name=selected_material["name"])
+    fem_model.visualize_stress_distribution(material_name=selected_material["name"])

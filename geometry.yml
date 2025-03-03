@@ -66,7 +66,7 @@ geometry:
         fx: 0
         fy: 0
       - node: 7
-        fx: 1000e6
+        fx: 1000e7
         fy: 1000
       - node: 11
         fx: 1000
